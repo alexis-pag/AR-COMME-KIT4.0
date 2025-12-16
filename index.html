@@ -1,122 +1,194 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Compile MindAR</title>
+  <style>
+    .dropzone { border: 2px dashed #ccc; padding: 20px; text-align: center; margin-bottom: 10px; cursor: pointer; }
+    .startButton { margin-top: 10px; padding: 5px 15px; }
+    .error { color: red; }
+    .tabs { display: flex; list-style: none; padding: 0; margin: 10px 0; }
+    .tabs__item { margin-right: 5px; padding: 5px 10px; border: 1px solid #ccc; cursor: pointer; }
+    .tabs__item--active { background-color: #ddd; font-weight: bold; }
+    canvas { border: 1px solid #000; display: block; margin-top: 10px; max-width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="compile">
 
-    <style>
-      body {margin:0; overflow:hidden; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
-      .video-controls {position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:12px; z-index:1000; flex-wrap:wrap; justify-content:center;}
-      .video-btn {background:linear-gradient(135deg,#b3b3b3 0%,#858585 100%); color:white; border:none; padding:12px 25px; border-radius:50px; font-size:14px; font-weight:600; cursor:pointer; text-transform:uppercase; letter-spacing:1px;}
-      .video-btn.active {background:linear-gradient(135deg,#a5a5a5 0%,#797979 100%);}
-      .info-btn {position:fixed; top:15px; right:15px; background:rgba(255,255,255,0.95); color:#333; border:none; padding:10px 16px; border-radius:50px; font-size:14px; font-weight:600; cursor:pointer; z-index:1000;}
-      .video-indicator {position:fixed; top:15px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:8px 20px; border-radius:50px; font-size:14px; z-index:999; backdrop-filter:blur(10px);}
-      #infoModal {position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:2000; overflow-y:auto;}
-      #infoModalContent {background:white; padding:20px; width:90%; max-width:400px; max-height:80vh; overflow-y:auto; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3); font-size:16px;}
-      #infoModalContent h2 {font-size:18px; margin-top:15px;}
-      #closeInfo {display:block; margin-top:15px; padding:10px 15px; border:none; background:#667eea; color:white; border-radius:8px; cursor:pointer; font-weight:600;}
-      #infoModalContent video {width:100%; height:auto; border-radius:8px;}
-    </style>
-  </head>
-
-  <body>
-    <button class="info-btn" id="infoBtn">INFO</button>
-    <div class="video-indicator" id="videoIndicator">Témoignage 1 : AXEL</div>
-
-    <div class="video-controls">
-      <button class="video-btn active" data-video="1">AXEL</button>
-      <button class="video-btn" data-video="2">HÉLÈNE</button>
-      <button class="video-btn" data-video="3">QUENTIN</button>
+    <!-- Upload Tab -->
+    <div id="upload-tab">
+      <h2>Select target images and start</h2>
+      <div class="dropzone" id="dropzone">Drag & Drop your images here</div>
+      <p class="error" id="upload-error"></p>
+      <button class="startButton" id="start-button">Start</button>
+      <p id="progress-text">Progress: 0%</p>
     </div>
 
-    <a-scene 
-      id="arScene"
-      mindar-image="imageTargetSrc: ./assets/targets-JPO.mind; filterMinCF:10000000; filterBeta:1000; warmupTolerance:0; missTolerance:500;" 
-      color-space="sRGB"
-      renderer="colorManagement:true,physicallyCorrectLights,antialias:true"
-      vr-mode-ui="enabled:false">
+    <!-- Visualize Tab -->
+    <div id="visualize-tab" style="display:none;">
+      <h2>Visualize compiled targets</h2>
 
-      <a-assets>
-        <video id="video1" src="./assets/films/Temoin3extra.mp4" preload="auto" playsinline webkit-playsinline autoplay crossorigin="anonymous"></video>
-        <video id="video2" src="./assets/films/Temoin2extra.mp4" preload="auto" playsinline webkit-playsinline autoplay crossorigin="anonymous"></video>
-        <video id="video3" src="./assets/films/Temoin1extra.mp4" preload="auto" playsinline webkit-playsinline autoplay crossorigin="anonymous"></video>
-        <img id="logo" src="./assets/object/Logo-simplifie-NB.jpg" />
-        <a-gltf-model id="trombonne" src="assets/object/trombone.glb""></a-gltf-model>
-      </a-assets>
+      <!-- Image selection -->
+      <ul class="tabs" id="image-tabs"></ul>
 
-      <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
+      <!-- Scale selection -->
+      <ul class="tabs" id="scale-tabs"></ul>
 
-      <a-entity mindar-image-target="targetIndex:0">
-        <a-plane id="logo-simplified" src="#logo" position="-0.32722 0.48861 0.0026" height="0.15" width="0.25" rotation="0 0 5" echelle="1.5 1.5 1.5" material="blending:normal"></a-plane>
-        <a-plane id="videoPlane" src="#video1" position="0 0 0" height="1.2" width="1" material="shader:flat"></a-plane>
-        <a-gltf-model id="trombonne" src="#trombonne" echelle="6 6 6" position="-0.46508 0.52744 0.00661" rotation="-6.74428620648492 89.89306735146025 -88.61880921508929"></a-gltf-model>
-      </a-entity>
-    </a-scene>
+      <!-- Canvas -->
+      <canvas id="target-canvas" width="640" height="480"></canvas>
 
-    <!-- Modal INFO -->
-    <div id="infoModal">
-      <div id="infoModalContent">
-        <h2>Informations</h2>
-        <p>Cette expérience de réalité augmentée présente des témoignages d'anciens élèves des classes préparatoires aux grandes écoles (CPGE) du Lycée Louis de Cormontaigne de Metz. En pointant votre appareil vers le flyer, vous pouvez visionner les vidéos de AXEL, HÉLÈNE et QUENTIN, qui partagent leurs expériences et conseils.</p>
-        <p>Ce projet a été imaginé, encadré et co-développé par Matthieu Farcot, avec deux stagiaires de première professionnelle CIEL du Lycée Louis de Cormontaigne, Alexis Paglierusco et Lucas Munsch.</p>
-        <p>(c) 2025, Lycée Louis de Cormontaigne Metz</p>
-        <a href="https://cpge.lycee-cormontaigne-metz.fr" target="_blank">Visitez notre site pour en savoir plus</a>
-
-        <h2>Bonus</h2>
-        <video controls playsinline webkit-playsinline>
-          <source src="./assets/films/Chat.mp4#t=0.010" type="video/mp4">
-          Votre navigateur ne supporte pas la vidéo.
-        </video>
-        <p><i>Cette vidéo n'a rien à voir avec le projet. Mais vivons avec notre temps.</i></p>
-        <button id="closeInfo">Fermer</button>
-      </div>
+      <!-- Download button -->
+      <button class="startButton" id="download-button">Download compiled</button>
     </div>
 
-    <script>
-      const videoPlane = document.querySelector('#videoPlane');
-      const videos = {1:document.querySelector('#video1'),2:document.querySelector('#video2'),3:document.querySelector('#video3')};
-      const names = {1:"AXEL",2:"HÉLÈNE",3:"QUENTIN"};
-      const buttons = document.querySelectorAll('.video-btn');
-      const indicator = document.querySelector('#videoIndicator');
-      let currentVideo = videos[1];
-      let isTargetFound = false;
+  </div>
 
-      // Boutons AR
-      buttons.forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const v = btn.getAttribute('data-video');
-          currentVideo.pause(); currentVideo.currentTime=0;
-          currentVideo = videos[v];
-          videoPlane.setAttribute('src', `#video${v}`);
-          if(isTargetFound) currentVideo.play().catch(()=>{});
-          buttons.forEach(b=>b.classList.remove('active'));
-          btn.classList.add('active');
-          indicator.textContent=`Témoignage ${v} : ${names[v]}`;
+  <script>
+    // ----- Variables globales -----
+    const dropzone = document.getElementById('dropzone');
+    const startButton = document.getElementById('start-button');
+    const uploadError = document.getElementById('upload-error');
+    const progressText = document.getElementById('progress-text');
+    const uploadTab = document.getElementById('upload-tab');
+    const visualizeTab = document.getElementById('visualize-tab');
+    const imageTabs = document.getElementById('image-tabs');
+    const scaleTabs = document.getElementById('scale-tabs');
+    const canvas = document.getElementById('target-canvas');
+    const downloadButton = document.getElementById('download-button');
+
+    let files = [];
+    let compiledData = [];
+    let exportedBuffer = null;
+    let targetIndex = 0;
+    let scaleIndex = 0;
+
+    // ----- Drag & Drop -----
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.background = '#eee'; });
+    dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.style.background = ''; });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.style.background = '';
+      files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      dropzone.textContent = files.map(f => f.name).join(', ') || 'Drag & Drop your images here';
+      uploadError.textContent = '';
+    });
+
+    // ----- Load image as HTMLImageElement -----
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // ----- Simulate compile -----
+    async function compileFiles(files) {
+      progressText.textContent = 'Progress: 0%';
+      compiledData = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const img = await loadImage(files[i]);
+        compiledData.push({
+          image: img,
+          width: img.width,
+          height: img.height,
+          scales: [img], // simulate scales
+          points: [
+            { x: img.width / 2, y: img.height / 2, scale: 5 }
+          ]
+        });
+        progressText.textContent = `Progress: ${Math.round(((i + 1) / files.length) * 100)}%`;
+      }
+
+      // Simulate exported buffer
+      exportedBuffer = new Uint8Array([1,2,3,4]);
+
+      // Switch to visualize tab
+      uploadTab.style.display = 'none';
+      visualizeTab.style.display = 'block';
+
+      setupTabs();
+      drawCanvas();
+    }
+
+    // ----- Start button -----
+    startButton.addEventListener('click', async () => {
+      if (files.length === 0) {
+        uploadError.textContent = 'Please select images.';
+        return;
+      }
+      await compileFiles(files);
+    });
+
+    // ----- Setup Image & Scale Tabs -----
+    function setupTabs() {
+      imageTabs.innerHTML = '';
+      scaleTabs.innerHTML = '';
+
+      compiledData.forEach((data, i) => {
+        const li = document.createElement('li');
+        li.textContent = `Image ${i+1}`;
+        li.className = i === targetIndex ? 'tabs__item tabs__item--active' : 'tabs__item';
+        li.onclick = () => { targetIndex = i; scaleIndex = 0; updateTabs(); drawCanvas(); };
+        imageTabs.appendChild(li);
+
+        // For scales
+        data.scales.forEach((_, j) => {
+          if (i === targetIndex) {
+            const sli = document.createElement('li');
+            sli.textContent = `Scale ${j+1}`;
+            sli.className = j === scaleIndex ? 'tabs__item tabs__item--active' : 'tabs__item';
+            sli.onclick = () => { scaleIndex = j; updateTabs(); drawCanvas(); };
+            scaleTabs.appendChild(sli);
+          }
         });
       });
+    }
 
-      // AR target
-      const sceneEl = document.querySelector('#arScene');
-      sceneEl.addEventListener('renderstart', ()=>{
-        const target = document.querySelector('[mindar-image-target]');
-        target.addEventListener('targetFound', ()=>{
-          isTargetFound=true;
-          currentVideo.play().catch(()=>{});
-        });
-        target.addEventListener('targetLost', ()=>{
-          isTargetFound=false;
-          currentVideo.pause();
-        });
+    function updateTabs() {
+      Array.from(imageTabs.children).forEach((li, i) => li.className = i === targetIndex ? 'tabs__item tabs__item--active' : 'tabs__item');
+      scaleTabs.innerHTML = '';
+      compiledData[targetIndex].scales.forEach((_, j) => {
+        const li = document.createElement('li');
+        li.textContent = `Scale ${j+1}`;
+        li.className = j === scaleIndex ? 'tabs__item tabs__item--active' : 'tabs__item';
+        li.onclick = () => { scaleIndex = j; updateTabs(); drawCanvas(); };
+        scaleTabs.appendChild(li);
       });
+    }
 
-      // Modal INFO
-      const infoBtn=document.getElementById('infoBtn');
-      const infoModal=document.getElementById('infoModal');
-      const closeInfo=document.getElementById('closeInfo');
-      infoBtn.addEventListener('click', ()=>infoModal.style.display='flex');
-      closeInfo.addEventListener('click', ()=>infoModal.style.display='none');
-      infoModal.addEventListener('click', e=>{if(e.target===infoModal) infoModal.style.display='none';});
-    </script>
-  </body>
+    // ----- Draw Canvas -----
+    function drawCanvas() {
+      const data = compiledData[targetIndex];
+      const img = data.scales[scaleIndex];
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      // draw points
+      data.points.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.scale, 0, 2*Math.PI);
+        ctx.strokeStyle = 'red';
+        ctx.stroke();
+      });
+    }
+
+    // ----- Download simulated buffer -----
+    downloadButton.addEventListener('click', () => {
+      if (!exportedBuffer) return;
+      const blob = new Blob([exportedBuffer], { type: 'application/octet-stream' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'targets.mind';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
+</body>
 </html>
